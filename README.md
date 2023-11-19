@@ -33,11 +33,11 @@ Your ultimate goal? Reach that prized 2048 tile. What's intriguing is that once 
 
 Quick Game Recap:
 
-🟡 The game unfolds on a 4x4 grid.
-🟡 Two initial tiles with random values set the stage for your journey. 🎲🌟
-🟡 Each move that alters the board spawns a new tile randomly (with value 2 with a 90% probability and value 4 with a 10% probability).
-🟡 Combining adjacent tiles with identical values results in a single tile with double the value (2 and 2 make 4, 4 and 4 make 8, and so on).
-🟡 The game ends when you can no longer make a move that changes the board. ❌🛑
+🟡 The game unfolds on a 4x4 grid.<br />
+🟡 Two initial tiles with random values set the stage for your journey. 🎲🌟<br />
+🟡 Each move that alters the board spawns a new tile randomly (with value 2 with a 90% probability and value 4 with a 10% probability).<br />
+🟡 Combining adjacent tiles with identical values results in a single tile with double the value (2 and 2 make 4, 4 and 4 make 8, and so on).<br />
+🟡 The game ends when you can no longer make a move that changes the board. ❌🛑<br />
 
 ### 3.2 Tic-tac-toe and Minimax
 Let's delve deeper into our solution by grasping a pivotal concept in decision theory: Minimax. 🧠
@@ -47,13 +47,13 @@ Let's delve deeper into our solution by grasping a pivotal concept in decision t
 In the realm of game theory, Minimax stands out as a foundational strategy utilized in two-player games with outcomes falling into three categories: win, lose, or tie.
 At its core, Minimax involves players strategically pursuing victory. Each player, in their turn, aims to make the optimal move leading to a win while hindering their opponent's progress.
 
-To simplify, at every stage of the game, players aim to:
-📈 MAXIMIZE their MINIMUM potential gain.
-📉 MINIMIZE their opponent's MAXIMUM potential advantage.
+To simplify, at every stage of the game, players aim to:<br />
+📈 MAXIMIZE their MINIMUM potential gain.<br />
+📉 MINIMIZE their opponent's MAXIMUM potential advantage.<br />
 
 This dual-sided strategy is aptly named "Minimax." 🔄
 
-🎲 Applying Minimax to Tic-tac-toe
+🎲 Applying Minimax to Tic-tac-toe<br />
 How does Minimax relate to the classic Tic-tac-toe game? In Tic-tac-toe, players (let's call them 'X' and 'O') take turns striving to win while blocking the opponent. They make moves to MAXIMIZE their chances of winning and MINIMIZE their opponent's opportunity for victory.
 
 If we consider 'X' on its turn, a MINIMAX algorithm would evaluate all potential moves as follows:
@@ -66,11 +66,11 @@ This recursive approach continues until reaching a draw, a winning position, or 
 
 The algorithm calculates evaluations for upper nodes by selecting the minimum value during "minimizing" turns (we take the least favorable state evaluation because we are pretty sure that the adversary will probably make the most favorable move for him) and the maximum value during "maximizing" turns (same reasoning but during our turn).
 
-<img src="resources/3.png" width="400"/>
+<img src="resources/3.png" width="600"/>
 
 ### 3.3 Expectiminimax
 
-<img src="resources/4.png" width="400"/>
+<img src="resources/4.png" width="600"/>
 
 Why and how apply Minimax to our 2048 bot? Let's unravel the mystery.
 
@@ -96,17 +96,91 @@ In simpler terms, we're weighing the "goodness" score by the probability of that
 
 To determine the best next move, we construct a tree to evaluate future states, considering the uncertainty component:
 
-1️⃣ Start from the current game state (root of the tree)
-2️⃣ Determine how the board changes with all 4 moves (excluding the random tile)
-3️⃣ These modified boards become the root's children
-4️⃣ For each board, the children include all possible tile spawn configurations
+1️⃣ Start from the current game state (root of the tree)<br />
+2️⃣ Determine how the board changes with all 4 moves (excluding the random tile)<br />
+3️⃣ These modified boards become the root's children<br />
+4️⃣ For each board, the children include all possible tile spawn configurations<br />
 
 This procedure continues until a maximum given depth. Unlike Tic-tac-toe, this is computationally heavy, but with a depth of 1, we achieve decent results, reaching the 2048 tile most times.
 
 Alright, we’re missing a single but very important thing now, how do we evaluate the “goodness” of a board configuration? (That is, how do we determine **B_eval** given a board config?)
 
 ### 3.4 Snake Heuristic
+Let's unravel the magic behind board evaluations. It's time to talk about the Snake Heuristic!
 
+<img src="resources/5.png" width="600"/>
+
+But first, a quick recap:
+
+In my initial attempt, I tried to evaluate board configurations based on:
+
+1️⃣ Number of empty tiles<br />
+2️⃣ Highest tile present<br />
+3️⃣ Smoothness of tile placement<br /> 
+
+While this provided some insights, there was room for improvement.
+
+Enter the "Snake Heuristic" a simpler and more effective evaluation function.
+
+🔎 What's a Heuristic?
+
+A heuristic is a practical approach to problem-solving that may not guarantee perfection but is sufficient for reaching immediate goals or approximations.
+
+Now, back to the Snake Heuristic. If you're familiar with 2048, you might have come across the strategy of keeping the highest tile in a corner and forming a "snake" pattern with the lower tiles. This strategy allows for efficient merging, creating a sequence of tile combinations.
+
+👨‍💻 Implementation:
+
+This strategy was easily implemented by multiplying (dot product) the board configuration with a "reference heuristic board" that mirrors this snake-like pattern. The closer a configuration resembles this shape, with the highest tiles adjacent in a snake pattern, the higher the "goodness" score.
+
+🎲 Remember, this isn't the final evaluation. The Snake Heuristic score is then multiplied by a probability factor, accounting for the likelihood of this configuration occurring
+
+### 3.5 Implementation
+Let's dive into the behind-the-scenes of implementing Expectiminimax using Python and Pygame. How did we bring this bot to life? Let's break it down!
+
+First things first, we needed a method to determine the best move at any given state. Enter the getBestAction method:
+
+```
+For each possible move (direction):
+ Compute the new board after this move
+ If the new board is different from the current board
+  Compute goodness of this new board
+  If the goodness is better than the current best score:
+   Set this as the new best score and the corresponding action to the best action
+
+Return the best action
+```
+
+Now, let's zoom in on the method responsible for calculating the goodness of a given board configuration. Brace yourselves for a journey into the decision-making core:
+
+```
+If the board is in a game-over state, return -∞
+If the depth is less than 0, return the score calculated by the Snake Heuristics
+
+If processing tree on the directions level:
+ For each possible move (direction):
+  Compute the new board
+  If the new board is different from the current board:
+   Compute goodness score of this new board (recursion) reducing the depth
+
+If processing tree on the combinations level:
+ For each empty tile on the board:
+  Create a clone with a 2 tile in this empty position
+  Create a clone with a 4 tile in this empty position
+  Compute goodness of both configurations
+  Weight the goodness score by the probability factor (1/num of empty tiles)  (p_2 or p_4)  goodness score
+  Add up these scores to the total score
+
+Return score and action (direction)
+```
+
+### 3.6 Results
+In order to obtain reliable statistics, I conducted a 100-simulation experiment, noting the highest tile reached in each game. The results are elegantly displayed in the barplot below ⬇️.
+
+<img src="resources/6.png" width="600"/>
+
+On average, the bot secures victory by reaching the coveted 2048 tile, occasionally pushing beyond to claim the 4096 tile. However, there are instances where it faces challenges, falling short of the 2048 mark.
+
+It's worth noting that these results were achieved with the maximum depth fixed at 1 to maintain optimal speed—any higher, and the bot's performance slowed considerably.
 
 ## 4. Contribution
 Feel free to fork this repository and work on your own solution!
